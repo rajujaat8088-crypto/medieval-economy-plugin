@@ -1,0 +1,41 @@
+
+name: Build Medieval Economy Plugin
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'medieval-economy-plugin.tar.gz'
+      - '.github/workflows/build.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Extract project
+        run: |
+          mkdir project
+          tar -xzf medieval-economy-plugin.tar.gz -C project
+          find project -name pom.xml
+
+      - name: Compile plugin
+        run: |
+          POM=$(find project -name pom.xml -print -quit)
+          test -n "$POM"
+          cd "$(dirname "$POM")"
+          mvn --batch-mode clean package
+          mkdir -p "$GITHUB_WORKSPACE/staging"
+          cp target/*.jar "$GITHUB_WORKSPACE/staging/"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MedievalEconomy-Plugin
+          path: staging/*.jar
+          
